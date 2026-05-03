@@ -1,30 +1,35 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const authRoutes = require("./src/routes/auth.route");
-const projectRoutes = require("./src/routes/project.route");
-const taskRoutes = require("./src/routes/task.route");
+const cors = require("cors");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
+
+const authRoutes = require("./src/routes/auth.route");
+const projectRoutes = require("./src/routes/project.route");
+const taskRoutes = require("./src/routes/task.route");
+
 const swaggerSpec = require("./src/config/swagger");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
-const logger = require("./src/utils/logger")
-const cors = require("cors");
+const logger = require("./src/utils/logger");
 
 const app = express();
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(morgan("dev"));
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,// frontend URL
-    credentials: true, // cookies allow
+    origin: process.env.FRONTEND_URL, 
+    credentials: true,
   })
 );
 
-// Send data from morgan to wiston
+app.options("*", cors());
+
+
+app.use(express.json());
+app.use(cookieParser());
+
+
 const morganFormat = ":method :url :status :response-time ms";
 
 app.use(
@@ -43,6 +48,7 @@ app.use(
   })
 );
 
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -51,13 +57,15 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/project", projectRoutes);
 app.use("/api/task", taskRoutes);
 
+
+app.use(errorMiddleware);
 
 
 process.on("uncaughtException", (err) => {
@@ -68,7 +76,5 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (err) => {
   logger.error("UNHANDLED REJECTION:", err.message);
 });
-
-app.use(errorMiddleware);
 
 module.exports = app;
