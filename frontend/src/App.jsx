@@ -14,6 +14,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+                <Route
+          path="/"
+          element={
+            localStorage.getItem("accessToken")
+              ? <Navigate to="/dashboard" />
+              : <Navigate to="/login" />
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/test" element={<Test />} />
         <Route path="/signup" element={<Signup />} />
